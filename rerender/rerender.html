@@ -1,0 +1,124 @@
+<!DOCTYPE html>
+<html lang="en">
+  <head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+    <meta http-equiv="X-UA-Compatible" content="ie=edge" />
+    <title>Document</title>
+    <script src="https://cdn.jsdelivr.net/npm/vue/dist/vue.js"></script>
+  </head>
+  <body>
+    <div id="app">
+      <child-component
+        v-if="peopleReady"
+        @update="forceKeyRerender"
+        :persons="originPeopleData.list"
+      />
+    </div>
+
+    <script>
+      // fake data & method
+      const dummyData = {
+        list: [
+          { id: 0, name: "jun", age: 27, job: "lounger", status: true },
+          { id: 1, name: "god", age: 7, job: "developer", status: true },
+          { id: 2, name: "tae", age: 29, job: "designer", status: true }
+        ],
+        active: true
+      };
+
+      // child component
+      const childComponent = {
+        props: {
+          persons: Array
+        },
+
+        computed: {
+          people() {
+            // const copiedPeople = this.persons.map(el => {
+            //   const element = { ...el };
+            //   return element;
+            // });
+            return this.persons;
+          }
+        },
+
+        methods: {
+          action(person) {
+            person.status = false;
+            this.$emit("update");
+          }
+        },
+
+        template: `
+          <div>
+            <ul v-for="person in people" :key="person.id">
+              <button @click="action(person)">Action</button>
+              <li>{{ person.name }}</li>
+              <li>{{ person.age }}</li>
+              <li>{{ person.job }}</li>
+            </ul>
+          </div>
+        `
+      };
+
+      // parent component
+      new Vue({
+        el: "#app",
+
+        components: {
+          "child-component": childComponent
+        },
+
+        data() {
+          return {
+            originPeopleData: {},
+            renderComponent: true,
+            componentKey: 0,
+            peopleReady: true
+          };
+        },
+
+        created() {
+          this.getData();
+          this.checkPeopleReady();
+        },
+
+        methods: {
+          getData() {
+            this.originPeopleData = { ...dummyData };
+          },
+
+          checkPeopleReady() {
+            this.originPeopleData.list.forEach(el => {
+              if (el.status === false) this.peopleReady = false;
+            });
+          },
+
+          reloadLocation() {
+            this.checkPeopleReady();
+            location.reload();
+          },
+
+          forceVIfHack() {
+            this.checkPeopleReady();
+            this.renderComponent = false;
+            this.$nextTick().then(() => {
+              this.renderComponent = true;
+            });
+          },
+
+          forceUpdate() {
+            this.checkPeopleReady();
+            this.$forceUpdate();
+          },
+
+          forceKeyRerender() {
+            this.checkPeopleReady();
+            this.componentKey += 1;
+          }
+        }
+      });
+    </script>
+  </body>
+</html>
